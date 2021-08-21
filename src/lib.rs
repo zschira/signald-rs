@@ -7,8 +7,6 @@ pub mod errors;
 pub mod async_std_socket;
 #[cfg(feature = "async-std")]
 pub use crate::async_std_socket::{SocketError, Signald};
-#[cfg(feature = "async-std")]
-use async_std::test;
 
 #[cfg(feature = "tokio")]
 pub mod tokio_socket;

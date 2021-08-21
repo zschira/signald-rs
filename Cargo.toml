@@ -1,5 +1,5 @@
 [package]
-name = "signald-rs"
+name = "signald"
 version = "0.1.0"
 authors = ["zschira <zasc3143@colorado.edu>"]
 edition = "2018"
