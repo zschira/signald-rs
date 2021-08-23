@@ -1,5 +1,6 @@
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
+use crate::errors::SignaldError;
 
 /// Accept a v2 group invitation. Note that you must have a profile name set to join groups.
 #[derive(Serialize, Deserialize, Default)]
@@ -2086,6 +2087,9 @@ pub struct TypeV0;
 
 #[derive(Serialize, Deserialize)]
 pub enum SignaldTypes {
+    SignaldError(SignaldError),
+    NoResponse,
+    String(String),
     AcceptInvitationRequestV1(AcceptInvitationRequestV1),
     AccountV1(AccountV1),
     AccountListV1(AccountListV1),

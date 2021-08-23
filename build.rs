@@ -21,6 +21,7 @@ fn main() {
         types_decl.import("serde", "Serialize");
         types_decl.import("serde", "Deserialize");
         types_decl.import("std::collections", "HashMap");
+        types_decl.import("crate::errors", "SignaldError");
 
         let mut variants: Vec<Variant> = Vec::new();
         for version in vec!["v1", "v0"].iter() {
@@ -31,6 +32,9 @@ fn main() {
             .vis("pub")
             .derive("Serialize")
             .derive("Deserialize");
+        types_enum.push_variant(Variant::new("SignaldError(SignaldError)"));
+        types_enum.push_variant(Variant::new("NoResponse"));
+        types_enum.push_variant(Variant::new("String(String)"));
 
         for variant in variants.drain(0..) {
             types_enum.push_variant(variant);
@@ -78,6 +82,8 @@ fn add_actions(scope: &mut Scope, actions: &Map<String, Value>, version: &str) {
         .target_generic("T")
         .bound("T", "AsyncSocket");
 
+    let mut lines = Vec::new();
+
     for (key, value) in actions.iter() {
         let request_type = value["request"].as_str().unwrap().to_owned() + &version;
         let response_type = match value["response"].as_str() {
@@ -89,6 +95,21 @@ fn add_actions(scope: &mut Scope, actions: &Map<String, Value>, version: &str) {
             },
             None => None,
         };
+
+        lines.push(format!("    \"{}\" => {{", key));
+        lines.push(format!("        if let SignaldTypes::{}(msg) = msg {{", request_type));
+        lines.push(format!("            self.{}(msg, Some(id)).await", key));
+
+        if let Some(response) = &response_type {
+            lines.push(format!("                .map(|response| SignaldTypes::{}(response))", response));
+        } else {
+            lines.push("                .map(|_| SignaldTypes::NoResponse)".to_owned())
+        }
+
+        lines.push("        } else {".to_owned());
+        lines.push("            Err(SocketError::General(\"Incorrect message type\"))".to_owned());
+        lines.push("        }".to_owned());
+        lines.push("    },".to_owned());
 
         let new_fn = api_impl
             .new_fn(key.as_str());
@@ -105,11 +126,15 @@ fn add_actions(scope: &mut Scope, actions: &Map<String, Value>, version: &str) {
                     match &response_type {
                         Some(response_type) => response_type.clone(),
                         None => String::from("()")
-                    })
-            )
+                    }
+            ))
             .arg_mut_self()
             .arg("msg", &request_type)
-            .line("let id = Uuid::new_v4();")
+            .arg("id", "Option<Uuid>")
+            .line("let id = match id {")
+            .line("    Some(id) => id,")
+            .line("    None => Uuid::new_v4()")
+            .line("};")
             .line("let msg = MessageCommon::new(")
             .line("    id.to_simple().to_string(),")
             .line(format!("    String::from(\"{}\"),", key))
@@ -135,6 +160,23 @@ fn add_actions(scope: &mut Scope, actions: &Map<String, Value>, version: &str) {
             .line("    Some(_) => Err(SocketError::Signald(serde_json::from_value::<SignaldError>(response).unwrap()))")
             .line("}");
     }
+
+    let call_fn = api_impl.new_fn("remote_call")
+        .set_async(true)
+        .vis("pub")
+        .arg_mut_self()
+        .arg("api_fn", "&str")
+        .arg("id", "Uuid")
+        .arg("msg", "SignaldTypes")
+        .ret("Result<SignaldTypes, SocketError>")
+        .doc("Call api function indirectly from string key")
+        .line("match api_fn {");
+
+    for line in lines {
+        call_fn.line(line);
+    }
+    call_fn.line("    _ => Err(SocketError::General(\"Unknown api function\"))");
+    call_fn.line("}");
 }
 
 fn add_types(scope: &mut Scope, types: &Map<String, Value>, version: &str, variants: &mut Vec<Variant>) {
