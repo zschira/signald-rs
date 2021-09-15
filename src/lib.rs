@@ -35,7 +35,7 @@ mod tests {
         use super::types::RegisterRequestV1;
         use super::Signald;
 
-        let mut socket = Signald::connect("run/signald.sock").await?;
+        let mut socket = Signald::connect("run/signald.sock", |_| {}).await?;
 
         let mut register = RegisterRequestV1::default();
         register.account = Some("+15551234567".to_owned());

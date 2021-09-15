@@ -16,8 +16,17 @@ pub struct MessageCommon<T> {
     #[serde(rename = "type")]
     pub type_: String,
     pub version: String,
+    #[serde(skip_serializing_if = "is_empty")]
     #[serde(flatten)]
     pub data: T
+}
+
+fn is_empty<T>(_data: &T) -> bool {
+    if std::mem::size_of::<T>() > 0 {
+        false
+    } else {
+        true
+    }
 }
 
 #[derive(Serialize, Default)]

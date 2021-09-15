@@ -193,6 +193,7 @@ fn add_types(scope: &mut Scope, types: &Map<String, Value>, version: &str, varia
             .vis("pub")
             .derive("Serialize")
             .derive("Deserialize")
+            .derive("Clone")
             .derive("Default");
 
         let value = value.as_object().unwrap();
@@ -232,21 +233,31 @@ fn get_field(field: &String, info: &Value) -> Field {
         doc.push(example.as_str());
     }
 
-    let mut new_field = match info["version"].as_str() {
+    let new_field = match info["version"].as_str() {
         Some(version) => {
             let version = version.to_uppercase();
-            get_clean_field(
-                field.as_str().clone(),
-                (info["type"].as_str().unwrap().to_owned() + version.as_str()).as_str()
-            )
+            info["type"].as_str().unwrap().to_owned() + version.as_str()
         },
         None => {
-            get_clean_field(
-                field.as_str().clone(),
-                get_type(info["type"].as_str().unwrap()).as_str().clone()
-            )
+            get_type(info["type"].as_str().unwrap())
         }
     };
+
+    let new_field = match info["list"].as_bool() {
+        Some(list) => {
+            if list {
+                format!("Vec<{}>", new_field)
+            } else {
+                new_field
+            }
+        },
+        None => new_field
+    };
+
+    let mut new_field = get_clean_field(
+        field.as_str().clone(),
+        &new_field
+    );
 
     new_field.doc(doc);
 
