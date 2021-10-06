@@ -2,9 +2,9 @@
   "doc_version": "v1",
   "version": {
     "name": "signald",
-    "version": "0.14.0+git2021-07-29r9da1afeb.8",
+    "version": "0.15.0-6-7fb32321",
     "branch": "main",
-    "commit": "9da1afeb3dd7286be632aa8ec96034f031b1b909"
+    "commit": "7fb323214faf9924355b73a6a383ce8c0137c8d0"
   },
   "info": "This document describes objects that may be used when communicating with signald.",
   "types": {
@@ -203,6 +203,11 @@
             "list": true,
             "type": "JsonMention",
             "version": "v1"
+          },
+          "previews": {
+            "list": true,
+            "type": "JsonPreview",
+            "version": "v1"
           }
         }
       },
@@ -218,6 +223,92 @@
             "example": "1615576442475"
           }
         }
+      },
+      "NoSuchAccountError": {
+        "fields": {
+          "account": {
+            "type": "String"
+          },
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
+      },
+      "ServerNotFoundError": {
+        "fields": {
+          "uuid": {
+            "type": "String"
+          },
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
+      },
+      "InvalidProxyError": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
+      },
+      "NoSendPermissionError": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
+      },
+      "InvalidAttachmentError": {
+        "fields": {
+          "filename": {
+            "type": "String"
+          },
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
+      },
+      "InternalError": {
+        "fields": {
+          "exceptions": {
+            "list": true,
+            "type": "String"
+          },
+          "message": {
+            "type": "String"
+          }
+        },
+        "doc": "an internal error in signald has occured.",
+        "error": true
+      },
+      "UnknownGroupError": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
+      },
+      "InvalidRecipientError": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
+      },
+      "RateLimitError": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
       },
       "ReactRequest": {
         "fields": {
@@ -256,7 +347,7 @@
           },
           "version": {
             "type": "String",
-            "example": "\"0.14.0+git2021-07-29r9da1afeb.8\""
+            "example": "\"0.15.0-6-7fb32321\""
           },
           "branch": {
             "type": "String",
@@ -264,7 +355,7 @@
           },
           "commit": {
             "type": "String",
-            "example": "\"9da1afeb3dd7286be632aa8ec96034f031b1b909\""
+            "example": "\"7fb323214faf9924355b73a6a383ce8c0137c8d0\""
           }
         }
       },
@@ -345,9 +436,21 @@
             "type": "GroupMember",
             "version": "v1",
             "doc": "detailed pending member list"
+          },
+          "announcements": {
+            "type": "String",
+            "doc": "indicates if the group is an announcements group. Only admins are allowed to send messages to announcements groups. Options are UNKNOWN, ENABLED or DISABLED"
           }
         },
         "doc": "Information about a Signal group"
+      },
+      "OwnProfileKeyDoesNotExistError": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
       },
       "ApproveMembershipRequest": {
         "fields": {
@@ -372,6 +475,14 @@
         },
         "doc": "approve a request to join a group"
       },
+      "GroupVerificationError": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
+      },
       "GetGroupRequest": {
         "fields": {
           "account": {
@@ -390,7 +501,15 @@
             "doc": "the latest known revision, default value (-1) forces fetch from server"
           }
         },
-        "doc": "Query the server for the latest state of a known group. If no account in signald is a member of the group (anymore), an error with error_type: 'UnknownGroupException' is returned."
+        "doc": "Query the server for the latest state of a known group. If no account in signald is a member of the group (anymore), an error with error_type: 'UnknownGroupError' is returned."
+      },
+      "InvalidGroupStateError": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
       },
       "GetLinkedDevicesRequest": {
         "fields": {
@@ -439,21 +558,52 @@
             "type": "String",
             "example": "\"Parkdale Run Club\""
           },
+          "description": {
+            "type": "String",
+            "example": "\"A club for running in Parkdale\""
+          },
           "memberCount": {
             "type": "int",
             "example": "3"
           },
           "addFromInviteLink": {
-            "type": "int"
+            "type": "int",
+            "doc": "The access level required in order to join the group from the invite link, as an AccessControl.AccessRequired enum from the upstream Signal groups.proto file. This is UNSATISFIABLE (4) when the group link is disabled; ADMINISTRATOR (3) when the group link is enabled, but an administrator must approve new members; and ANY (1) when the group link is enabled and no approval is required. See theGroupAccessControl structure and the upstream enum ordinals."
           },
           "revision": {
             "type": "int",
+            "doc": "The Group V2 revision. This is incremented by clients whenever they update group information, and it is often used by clients to determine if the local group state is out-of-date with the server's revision.",
             "example": "5"
           },
           "pendingAdminApproval": {
-            "type": "boolean"
+            "type": "boolean",
+            "doc": "Whether the account is waiting for admin approval in order to be added to the group."
           }
         }
+      },
+      "InvalidRequestError": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
+      },
+      "InvalidInviteURIError": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
+      },
+      "GroupNotActiveError": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
       },
       "RemoveLinkedDeviceRequest": {
         "fields": {
@@ -490,6 +640,11 @@
             "type": "String",
             "example": "\"Parkdale Run Club\""
           },
+          "description": {
+            "type": "String",
+            "doc": "A new group description. Set to empty string to remove an existing description.",
+            "example": "\"A club for running in Parkdale\""
+          },
           "avatar": {
             "type": "String",
             "example": "\"/tmp/image.jpg\""
@@ -520,9 +675,13 @@
           "resetLink": {
             "type": "boolean",
             "doc": "regenerate the group link password, invalidating the old one"
+          },
+          "announcements": {
+            "type": "String",
+            "doc": "ENABLED to only allow admins to post messages, DISABLED to allow anyone to post"
           }
         },
-        "doc": "modify a group. Note that only one modification action may be preformed at once"
+        "doc": "modify a group. Note that only one modification action may be performed at once"
       },
       "GroupInfo": {
         "fields": {
@@ -570,6 +729,14 @@
           }
         }
       },
+      "InvalidBase64Error": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
+      },
       "ResolveAddressRequest": {
         "fields": {
           "account": {
@@ -585,7 +752,7 @@
             "required": true
           }
         },
-        "doc": "Resolve a partial JsonAddress with only a number or UUID to one with both. Anywhere that signald accepts a JsonAddress will except a partial, this is a convenience function for client authors, mostly because signald doesn't resolve all the partials it returns"
+        "doc": "Resolve a partial JsonAddress with only a number or UUID to one with both. Anywhere that signald accepts a JsonAddress will except a partial, this is a convenience function for client authors, mostly because signald doesn't resolve all the partials it returns."
       },
       "JsonAddress": {
         "fields": {
@@ -628,6 +795,21 @@
             "type": "Long"
           }
         }
+      },
+      "UntrustedIdentityError": {
+        "fields": {
+          "identifier": {
+            "type": "String"
+          },
+          "message": {
+            "type": "String"
+          },
+          "identity_key": {
+            "type": "IdentityKey",
+            "version": "v1"
+          }
+        },
+        "error": true
       },
       "GetProfileRequest": {
         "fields": {
@@ -693,6 +875,14 @@
           }
         },
         "doc": "Information about a Signal user"
+      },
+      "ProfileUnavailableError": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
       },
       "ListGroupsRequest": {
         "fields": {
@@ -771,6 +961,14 @@
           }
         }
       },
+      "NoKnownUUIDError": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
+      },
       "LeaveGroupRequest": {
         "fields": {
           "account": {
@@ -824,6 +1022,10 @@
             "version": "v1",
             "doc": "The address of this account"
           },
+          "pending": {
+            "type": "Boolean",
+            "doc": "indicates the account has not completed registration"
+          },
           "device_id": {
             "type": "int",
             "doc": "The Signal device ID. Official Signal mobile clients (iPhone and Android) have device ID = 1, while linked devices such as Signal Desktop or Signal iPad have higher device IDs."
@@ -834,6 +1036,25 @@
           }
         },
         "doc": "A local account in signald"
+      },
+      "NoSuchSessionError": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
+      },
+      "UserAlreadyExistsError": {
+        "fields": {
+          "uuid": {
+            "type": "UUID"
+          },
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
       },
       "AddLinkedDeviceRequest": {
         "fields": {
@@ -875,6 +1096,17 @@
         },
         "doc": "begin the account registration process by requesting a phone number verification code. when the code is received, submit it with a verify request"
       },
+      "CaptchaRequiredError": {
+        "fields": {
+          "more": {
+            "type": "String"
+          },
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
+      },
       "VerifyRequest": {
         "fields": {
           "account": {
@@ -891,6 +1123,33 @@
           }
         },
         "doc": "verify an account's phone number with a code after registering, completing the account creation process"
+      },
+      "AccountHasNoKeysError": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
+      },
+      "AccountAlreadyVerifiedError": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
+      },
+      "AccountLockedError": {
+        "fields": {
+          "more": {
+            "type": "String"
+          },
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
       },
       "GetIdentitiesRequest": {
         "fields": {
@@ -954,6 +1213,30 @@
         },
         "doc": "Trust another user's safety number using either the QR code data or the safety number text"
       },
+      "FingerprintVersionMismatchError": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
+      },
+      "UnknownIdentityKeyError": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
+      },
+      "InvalidFingerprintError": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
+      },
       "DeleteAccountRequest": {
         "fields": {
           "account": {
@@ -995,6 +1278,14 @@
           }
         },
         "doc": "send a typing started or stopped message"
+      },
+      "InvalidGroupError": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
       },
       "ResetSessionRequest": {
         "fields": {
@@ -1072,6 +1363,14 @@
           }
         },
         "doc": "Get information about a group from a signal.group link"
+      },
+      "GroupLinkNotActiveError": {
+        "fields": {
+          "message": {
+            "type": "String"
+          }
+        },
+        "error": true
       },
       "UpdateContactRequest": {
         "fields": {
@@ -1256,6 +1555,49 @@
         },
         "doc": "send a mobilecoin payment"
       },
+      "RemoteConfigRequest": {
+        "fields": {
+          "account": {
+            "type": "String",
+            "doc": "The account to use to retrieve the remote config",
+            "example": "\"+12024561414\"",
+            "required": true
+          }
+        },
+        "doc": "Retrieves the remote config (feature flags) from the server."
+      },
+      "RemoteConfigList": {
+        "fields": {
+          "config": {
+            "list": true,
+            "type": "RemoteConfig",
+            "version": "v1"
+          }
+        }
+      },
+      "RefuseMembershipRequest": {
+        "fields": {
+          "account": {
+            "type": "String",
+            "doc": "The account to interact with",
+            "example": "\"+12024561414\"",
+            "required": true
+          },
+          "members": {
+            "list": true,
+            "type": "JsonAddress",
+            "version": "v1",
+            "doc": "list of requesting members to refuse",
+            "required": true
+          },
+          "group_id": {
+            "type": "String",
+            "example": "\"EdSqI90cS0UomDpgUXOlCoObWvQOXlH5G3Z2d3f4ayE=\"",
+            "required": true
+          }
+        },
+        "doc": "deny a request to join a group"
+      },
       "JsonDataMessage": {
         "fields": {
           "timestamp": {
@@ -1266,7 +1608,7 @@
           "attachments": {
             "list": true,
             "type": "JsonAttachment",
-            "version": "v0",
+            "version": "v1",
             "doc": "files attached to the incoming message"
           },
           "body": {
@@ -1308,7 +1650,7 @@
           "previews": {
             "list": true,
             "type": "JsonPreview",
-            "version": "v0",
+            "version": "v1",
             "doc": "if the incoming message has a link preview, information about that preview will be here"
           },
           "sticker": {
@@ -1355,14 +1697,14 @@
           },
           "contacts": {
             "type": "JsonAttachment",
-            "version": "v0"
+            "version": "v1"
           },
           "contactsComplete": {
             "type": "boolean"
           },
           "groups": {
             "type": "JsonAttachment",
-            "version": "v0"
+            "version": "v1"
           },
           "blockedList": {
             "type": "JsonBlockedListMessage",
@@ -1512,6 +1854,28 @@
           }
         }
       },
+      "JsonPreview": {
+        "fields": {
+          "url": {
+            "type": "String"
+          },
+          "title": {
+            "type": "String"
+          },
+          "description": {
+            "type": "String"
+          },
+          "date": {
+            "type": "long"
+          },
+          "attachment": {
+            "type": "JsonAttachment",
+            "version": "v1",
+            "doc": "an optional image file attached to the preview"
+          }
+        },
+        "doc": "metadata about one of the links in a message"
+      },
       "JsonSendMessageResult": {
         "fields": {
           "address": {
@@ -1519,8 +1883,8 @@
             "version": "v1"
           },
           "success": {
-            "type": "Success",
-            "version": "v0"
+            "type": "SendSuccess",
+            "version": "v1"
           },
           "networkFailure": {
             "type": "boolean",
@@ -1630,19 +1994,6 @@
         },
         "doc": "information about a legacy group"
       },
-      "Capabilities": {
-        "fields": {
-          "gv2": {
-            "type": "boolean"
-          },
-          "storage": {
-            "type": "boolean"
-          },
-          "gv1-migration": {
-            "type": "boolean"
-          }
-        }
-      },
       "IdentityKey": {
         "fields": {
           "added": {
@@ -1663,6 +2014,19 @@
           }
         }
       },
+      "Capabilities": {
+        "fields": {
+          "gv2": {
+            "type": "boolean"
+          },
+          "storage": {
+            "type": "boolean"
+          },
+          "gv1-migration": {
+            "type": "boolean"
+          }
+        }
+      },
       "Server": {
         "fields": {
           "uuid": {
@@ -1673,7 +2037,8 @@
             "type": "String"
           },
           "ca": {
-            "type": "String"
+            "type": "String",
+            "doc": "base64 encoded trust store, password must be 'whisper'"
           },
           "service_url": {
             "type": "String"
@@ -1697,7 +2062,25 @@
             "doc": "base64 encoded ZKGROUP_SERVER_PUBLIC_PARAMS value"
           },
           "unidentified_sender_root": {
+            "type": "String",
+            "doc": "base64 encoded"
+          },
+          "key_backup_service_name": {
             "type": "String"
+          },
+          "key_backup_service_id": {
+            "type": "String",
+            "doc": "base64 encoded"
+          },
+          "key_backup_mrenclave": {
+            "type": "String"
+          },
+          "cds_mrenclave": {
+            "type": "String"
+          },
+          "ias_ca": {
+            "type": "String",
+            "doc": "base64 encoded trust store, password must be 'whisper'"
           }
         },
         "doc": "a Signal server"
@@ -1714,6 +2097,68 @@
           }
         },
         "doc": "details about a MobileCoin payment"
+      },
+      "RemoteConfig": {
+        "fields": {
+          "name": {
+            "type": "String",
+            "doc": "The name of this remote config entry. These names may be prefixed with the platform type (\"android.\", \"ios.\", \"desktop.\", etc.) Typically, clients only handle the relevant configs for its platform, hardcoding the names it cares about handling and ignoring the rest.",
+            "example": "desktop.mediaQuality.levels"
+          },
+          "value": {
+            "type": "String",
+            "doc": "The value for this remote config entry. Even though this is a string, it could be a boolean as a string, an integer/long value, a comma-delimited list, etc. Clients usually consume this by hardcoding the feature flagsit should track in the app and assuming that the server will send the type that the client expects. If an unexpected type occurs, it falls back to a default value.",
+            "example": "1:2,61:2,81:2,82:2,65:2,31:2,47:2,41:2,32:2,385:2,971:2,974:2,49:2,33:2,*:1"
+          }
+        },
+        "doc": "A remote config (feature flag) entry."
+      },
+      "JsonAttachment": {
+        "fields": {
+          "contentType": {
+            "type": "String"
+          },
+          "id": {
+            "type": "String"
+          },
+          "size": {
+            "type": "int"
+          },
+          "storedFilename": {
+            "type": "String",
+            "doc": "when receiving, the path that file has been downloaded to"
+          },
+          "filename": {
+            "type": "String",
+            "doc": "when sending, the path to the local file to upload"
+          },
+          "customFilename": {
+            "type": "String",
+            "doc": "the original name of the file"
+          },
+          "caption": {
+            "type": "String"
+          },
+          "width": {
+            "type": "int"
+          },
+          "height": {
+            "type": "int"
+          },
+          "voiceNote": {
+            "type": "boolean"
+          },
+          "key": {
+            "type": "String"
+          },
+          "digest": {
+            "type": "String"
+          },
+          "blurhash": {
+            "type": "String"
+          }
+        },
+        "doc": "represents a file attached to a message. When seding, only `filename` is required."
       },
       "RemoteDelete": {
         "fields": {
@@ -1880,6 +2325,23 @@
           }
         }
       },
+      "SendSuccess": {
+        "fields": {
+          "unidentified": {
+            "type": "boolean"
+          },
+          "needsSync": {
+            "type": "boolean"
+          },
+          "duration": {
+            "type": "long"
+          },
+          "devices": {
+            "list": true,
+            "type": "Integer"
+          }
+        }
+      },
       "ServerCDN": {
         "fields": {
           "number": {
@@ -1924,7 +2386,8 @@
             "type": "String"
           },
           "relay": {
-            "type": "String"
+            "type": "String",
+            "doc": "this field is no longer available and will never be populated"
           },
           "timestamp": {
             "type": "long",
@@ -2293,22 +2756,6 @@
           }
         }
       },
-      "JsonPreview": {
-        "fields": {
-          "url": {
-            "type": "String"
-          },
-          "title": {
-            "type": "String"
-          },
-          "attachment": {
-            "type": "JsonAttachment",
-            "version": "v0"
-          }
-        },
-        "deprecated": true,
-        "removal_date": 1641027661
-      },
       "JsonSticker": {
         "fields": {
           "packID": {
@@ -2556,6 +3003,22 @@
         "deprecated": true,
         "removal_date": 1641027661
       },
+      "JsonPreview": {
+        "fields": {
+          "url": {
+            "type": "String"
+          },
+          "title": {
+            "type": "String"
+          },
+          "attachment": {
+            "type": "JsonAttachment",
+            "version": "v0"
+          }
+        },
+        "deprecated": true,
+        "removal_date": 1641027661
+      },
       "JsonReaction": {
         "fields": {
           "emoji": {
@@ -2730,19 +3193,6 @@
         "deprecated": true,
         "removal_date": 1641027661
       },
-      "Success": {
-        "fields": {
-          "unidentified": {
-            "type": "boolean"
-          },
-          "needsSync": {
-            "type": "boolean"
-          },
-          "duration": {
-            "type": "long"
-          }
-        }
-      },
       "Name": {
         "fields": {
           "display": {
@@ -2825,12 +3275,64 @@
     "v1": {
       "send": {
         "request": "SendRequest",
-        "response": "SendResponse"
+        "response": "SendResponse",
+        "errors": [
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "NoSendPermissionError"
+          },
+          {
+            "name": "InvalidAttachmentError"
+          },
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "UnknownGroupError"
+          },
+          {
+            "name": "InvalidRecipientError"
+          },
+          {
+            "name": "RateLimitError"
+          }
+        ]
       },
       "react": {
         "request": "ReactRequest",
         "response": "SendResponse",
-        "doc": "react to a previous message"
+        "doc": "react to a previous message",
+        "errors": [
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "NoSendPermissionError"
+          },
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidRecipientError"
+          },
+          {
+            "name": "UnknownGroupError"
+          }
+        ]
       },
       "version": {
         "request": "VersionRequest",
@@ -2839,177 +3341,900 @@
       "accept_invitation": {
         "request": "AcceptInvitationRequest",
         "response": "JsonGroupV2Info",
-        "doc": "Accept a v2 group invitation. Note that you must have a profile name set to join groups."
+        "doc": "Accept a v2 group invitation. Note that you must have a profile name set to join groups.",
+        "errors": [
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "OwnProfileKeyDoesNotExistError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "UnknownGroupError"
+          },
+          {
+            "name": "InternalError"
+          }
+        ]
       },
       "approve_membership": {
         "request": "ApproveMembershipRequest",
         "response": "JsonGroupV2Info",
-        "doc": "approve a request to join a group"
+        "doc": "approve a request to join a group",
+        "errors": [
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "UnknownGroupError"
+          },
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "GroupVerificationError"
+          }
+        ]
       },
       "get_group": {
         "request": "GetGroupRequest",
         "response": "JsonGroupV2Info",
-        "doc": "Query the server for the latest state of a known group. If no account in signald is a member of the group (anymore), an error with error_type: 'UnknownGroupException' is returned."
+        "doc": "Query the server for the latest state of a known group. If no account in signald is a member of the group (anymore), an error with error_type: 'UnknownGroupError' is returned.",
+        "errors": [
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "UnknownGroupError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "GroupVerificationError"
+          },
+          {
+            "name": "InvalidGroupStateError"
+          }
+        ]
       },
       "get_linked_devices": {
         "request": "GetLinkedDevicesRequest",
         "response": "LinkedDevices",
-        "doc": "list all linked devices on a Signal account"
+        "doc": "list all linked devices on a Signal account",
+        "errors": [
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          }
+        ]
       },
       "join_group": {
         "request": "JoinGroupRequest",
         "response": "JsonGroupJoinInfo",
-        "doc": "Join a group using the a signal.group URL. Note that you must have a profile name set to join groups."
+        "doc": "Join a group using the a signal.group URL. Note that you must have a profile name set to join groups.",
+        "errors": [
+          {
+            "name": "InvalidRequestError"
+          },
+          {
+            "name": "InvalidInviteURIError"
+          },
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "OwnProfileKeyDoesNotExistError"
+          },
+          {
+            "name": "GroupVerificationError"
+          },
+          {
+            "name": "GroupNotActiveError"
+          },
+          {
+            "name": "UnknownGroupError"
+          },
+          {
+            "name": "InvalidGroupStateError"
+          }
+        ]
       },
       "remove_linked_device": {
         "request": "RemoveLinkedDeviceRequest",
-        "doc": "Remove a linked device from the Signal account. Only allowed when the local device id is 1"
+        "doc": "Remove a linked device from the Signal account. Only allowed when the local device id is 1",
+        "errors": [
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          }
+        ]
       },
       "update_group": {
         "request": "UpdateGroupRequest",
         "response": "GroupInfo",
-        "doc": "modify a group. Note that only one modification action may be preformed at once"
+        "doc": "modify a group. Note that only one modification action may be performed at once",
+        "errors": [
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "UnknownGroupError"
+          },
+          {
+            "name": "GroupVerificationError"
+          },
+          {
+            "name": "InvalidRequestError"
+          }
+        ]
       },
       "set_profile": {
-        "request": "SetProfile"
+        "request": "SetProfile",
+        "errors": [
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "InvalidBase64Error"
+          }
+        ]
       },
       "resolve_address": {
         "request": "ResolveAddressRequest",
         "response": "JsonAddress",
-        "doc": "Resolve a partial JsonAddress with only a number or UUID to one with both. Anywhere that signald accepts a JsonAddress will except a partial, this is a convenience function for client authors, mostly because signald doesn't resolve all the partials it returns"
+        "doc": "Resolve a partial JsonAddress with only a number or UUID to one with both. Anywhere that signald accepts a JsonAddress will except a partial, this is a convenience function for client authors, mostly because signald doesn't resolve all the partials it returns.",
+        "errors": [
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          }
+        ]
       },
       "mark_read": {
-        "request": "MarkReadRequest"
+        "request": "MarkReadRequest",
+        "errors": [
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "UntrustedIdentityError"
+          }
+        ]
       },
       "get_profile": {
         "request": "GetProfileRequest",
         "response": "Profile",
-        "doc": "Get all information available about a user"
+        "doc": "Get all information available about a user",
+        "errors": [
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "ProfileUnavailableError"
+          }
+        ]
       },
       "list_groups": {
         "request": "ListGroupsRequest",
-        "response": "GroupList"
+        "response": "GroupList",
+        "errors": [
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          }
+        ]
       },
       "list_contacts": {
         "request": "ListContactsRequest",
-        "response": "ProfileList"
+        "response": "ProfileList",
+        "errors": [
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          }
+        ]
       },
       "create_group": {
         "request": "CreateGroupRequest",
-        "response": "JsonGroupV2Info"
+        "response": "JsonGroupV2Info",
+        "errors": [
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "OwnProfileKeyDoesNotExistError"
+          },
+          {
+            "name": "NoKnownUUIDError"
+          },
+          {
+            "name": "InvalidRequestError"
+          },
+          {
+            "name": "GroupVerificationError"
+          },
+          {
+            "name": "InvalidGroupStateError"
+          },
+          {
+            "name": "UnknownGroupError"
+          }
+        ]
       },
       "leave_group": {
         "request": "LeaveGroupRequest",
-        "response": "GroupInfo"
+        "response": "GroupInfo",
+        "errors": [
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "UnknownGroupError"
+          },
+          {
+            "name": "GroupVerificationError"
+          }
+        ]
       },
       "generate_linking_uri": {
         "request": "GenerateLinkingURIRequest",
         "response": "LinkingURI",
-        "doc": "Generate a linking URI. Typically this is QR encoded and scanned by the primary device. Submit the returned session_id with a finish_link request."
+        "doc": "Generate a linking URI. Typically this is QR encoded and scanned by the primary device. Submit the returned session_id with a finish_link request.",
+        "errors": [
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "InvalidProxyError"
+          }
+        ]
       },
       "finish_link": {
         "request": "FinishLinkRequest",
         "response": "Account",
-        "doc": "After a linking URI has been requested, finish_link must be called with the session_id provided with the URI. it will return information about the new account once the linking process is completed by the other device."
+        "doc": "After a linking URI has been requested, finish_link must be called with the session_id provided with the URI. it will return information about the new account once the linking process is completed by the other device.",
+        "errors": [
+          {
+            "name": "NoSuchSessionError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "UserAlreadyExistsError"
+          }
+        ]
       },
       "add_device": {
         "request": "AddLinkedDeviceRequest",
-        "doc": "Link a new device to a local Signal account"
+        "doc": "Link a new device to a local Signal account",
+        "errors": [
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "InvalidRequestError",
+            "doc": "caused by syntax errors with the provided linking URI"
+          },
+          {
+            "name": "InternalError"
+          }
+        ]
       },
       "register": {
         "request": "RegisterRequest",
         "response": "Account",
-        "doc": "begin the account registration process by requesting a phone number verification code. when the code is received, submit it with a verify request"
+        "doc": "begin the account registration process by requesting a phone number verification code. when the code is received, submit it with a verify request",
+        "errors": [
+          {
+            "name": "CaptchaRequiredError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "InvalidProxyError"
+          }
+        ]
       },
       "verify": {
         "request": "VerifyRequest",
         "response": "Account",
-        "doc": "verify an account's phone number with a code after registering, completing the account creation process"
+        "doc": "verify an account's phone number with a code after registering, completing the account creation process",
+        "errors": [
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "AccountHasNoKeysError"
+          },
+          {
+            "name": "AccountAlreadyVerifiedError"
+          },
+          {
+            "name": "AccountLockedError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          }
+        ]
       },
       "get_identities": {
         "request": "GetIdentitiesRequest",
         "response": "IdentityKeyList",
-        "doc": "Get information about a known keys for a particular address"
+        "doc": "Get information about a known keys for a particular address",
+        "errors": [
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          }
+        ]
       },
       "trust": {
         "request": "TrustRequest",
-        "doc": "Trust another user's safety number using either the QR code data or the safety number text"
+        "doc": "Trust another user's safety number using either the QR code data or the safety number text",
+        "errors": [
+          {
+            "name": "InvalidRequestError"
+          },
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "FingerprintVersionMismatchError"
+          },
+          {
+            "name": "InvalidBase64Error"
+          },
+          {
+            "name": "UnknownIdentityKeyError"
+          },
+          {
+            "name": "InvalidFingerprintError"
+          }
+        ]
       },
       "delete_account": {
         "request": "DeleteAccountRequest",
-        "doc": "delete all account data signald has on disk, and optionally delete the account from the server as well. Note that this is not \"unlink\" and will delete the entire account, even from a linked device."
+        "doc": "delete all account data signald has on disk, and optionally delete the account from the server as well. Note that this is not \"unlink\" and will delete the entire account, even from a linked device.",
+        "errors": [
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          }
+        ]
       },
       "typing": {
         "request": "TypingRequest",
-        "doc": "send a typing started or stopped message"
+        "doc": "send a typing started or stopped message",
+        "errors": [
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "InvalidRecipientError"
+          },
+          {
+            "name": "InvalidGroupError"
+          },
+          {
+            "name": "UntrustedIdentityError"
+          },
+          {
+            "name": "UnknownGroupError"
+          }
+        ]
       },
       "reset_session": {
         "request": "ResetSessionRequest",
         "response": "SendResponse",
-        "doc": "reset a session with a particular user"
+        "doc": "reset a session with a particular user",
+        "errors": [
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "InvalidRecipientError"
+          },
+          {
+            "name": "NoSendPermissionError"
+          },
+          {
+            "name": "UnknownGroupError"
+          },
+          {
+            "name": "RateLimitError"
+          }
+        ]
       },
       "request_sync": {
         "request": "RequestSyncRequest",
-        "doc": "Request other devices on the account send us their group list, syncable config and contact list."
+        "doc": "Request other devices on the account send us their group list, syncable config and contact list.",
+        "errors": [
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "UntrustedIdentityError"
+          }
+        ]
       },
       "list_accounts": {
         "request": "ListAccountsRequest",
         "response": "AccountList",
-        "doc": "return all local accounts"
+        "doc": "return all local accounts",
+        "errors": [
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "InternalError"
+          }
+        ]
       },
       "group_link_info": {
         "request": "GroupLinkInfoRequest",
         "response": "JsonGroupJoinInfo",
-        "doc": "Get information about a group from a signal.group link"
+        "doc": "Get information about a group from a signal.group link",
+        "errors": [
+          {
+            "name": "GroupLinkNotActiveError"
+          },
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "InvalidRequestError"
+          },
+          {
+            "name": "GroupVerificationError"
+          }
+        ]
       },
       "update_contact": {
         "request": "UpdateContactRequest",
         "response": "Profile",
-        "doc": "update information about a local contact"
+        "doc": "update information about a local contact",
+        "errors": [
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "InternalError"
+          }
+        ]
       },
       "set_expiration": {
         "request": "SetExpirationRequest",
         "response": "SendResponse",
-        "doc": "Set the message expiration timer for a thread. Expiration must be specified in seconds, set to 0 to disable timer"
+        "doc": "Set the message expiration timer for a thread. Expiration must be specified in seconds, set to 0 to disable timer",
+        "errors": [
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "UnknownGroupError"
+          },
+          {
+            "name": "GroupVerificationError"
+          }
+        ]
       },
       "set_device_name": {
         "request": "SetDeviceNameRequest",
-        "doc": "set this device's name. This will show up on the mobile device on the same account under "
+        "doc": "set this device's name. This will show up on the mobile device on the same account under ",
+        "errors": [
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          }
+        ]
       },
       "get_all_identities": {
         "request": "GetAllIdentities",
         "response": "AllIdentityKeyList",
-        "doc": "get all known identity keys"
+        "doc": "get all known identity keys",
+        "errors": [
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "InternalError"
+          }
+        ]
       },
       "subscribe": {
         "request": "SubscribeRequest",
-        "doc": "receive incoming messages. After making a subscribe request, incoming messages will be sent to the client encoded as ClientMessageWrapper. Send an unsubscribe request or disconnect from the socket to stop receiving messages."
+        "doc": "receive incoming messages. After making a subscribe request, incoming messages will be sent to the client encoded as ClientMessageWrapper. Send an unsubscribe request or disconnect from the socket to stop receiving messages.",
+        "errors": [
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "InternalError"
+          }
+        ]
       },
       "unsubscribe": {
         "request": "UnsubscribeRequest",
-        "doc": "See subscribe for more info"
+        "doc": "See subscribe for more info",
+        "errors": [
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "InternalError"
+          }
+        ]
       },
       "remote_delete": {
         "request": "RemoteDeleteRequest",
         "response": "SendResponse",
-        "doc": "delete a message previously sent"
+        "doc": "delete a message previously sent",
+        "errors": [
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "InvalidRecipientError"
+          },
+          {
+            "name": "NoSendPermissionError"
+          },
+          {
+            "name": "UnknownGroupError"
+          },
+          {
+            "name": "RateLimitError"
+          }
+        ]
       },
       "add_server": {
         "request": "AddServerRequest",
         "response": "String",
-        "doc": "add a new server to connect to. Returns the new server's UUID."
+        "doc": "add a new server to connect to. Returns the new server's UUID.",
+        "errors": [
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "InternalError"
+          }
+        ]
       },
       "get_servers": {
         "request": "GetServersRequest",
-        "response": "ServerList"
+        "response": "ServerList",
+        "errors": [
+          {
+            "name": "InternalError"
+          }
+        ]
       },
       "delete_server": {
-        "request": "RemoveServerRequest"
+        "request": "RemoveServerRequest",
+        "errors": [
+          {
+            "name": "InternalError"
+          }
+        ]
       },
       "send_payment": {
         "request": "SendPaymentRequest",
         "response": "SendResponse",
-        "doc": "send a mobilecoin payment"
+        "doc": "send a mobilecoin payment",
+        "errors": [
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "InvalidBase64Error"
+          },
+          {
+            "name": "InvalidRecipientError"
+          },
+          {
+            "name": "UnknownGroupError"
+          },
+          {
+            "name": "NoSendPermissionError"
+          }
+        ]
+      },
+      "get_remote_config": {
+        "request": "RemoteConfigRequest",
+        "response": "RemoteConfigList",
+        "doc": "Retrieves the remote config (feature flags) from the server.",
+        "errors": [
+          {
+            "name": "InternalError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "NoSuchAccountError"
+          }
+        ]
+      },
+      "refuse_membership": {
+        "request": "RefuseMembershipRequest",
+        "response": "JsonGroupV2Info",
+        "doc": "deny a request to join a group",
+        "errors": [
+          {
+            "name": "NoSuchAccountError"
+          },
+          {
+            "name": "ServerNotFoundError"
+          },
+          {
+            "name": "InvalidProxyError"
+          },
+          {
+            "name": "UnknownGroupError"
+          },
+          {
+            "name": "GroupVerificationError"
+          },
+          {
+            "name": "InternalError"
+          }
+        ]
       }
     }
   }

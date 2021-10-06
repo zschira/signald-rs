@@ -255,7 +255,7 @@ where T: AsyncSocket,
         }
     }
 
-    /// Query the server for the latest state of a known group. If no account in signald is a member of the group (anymore), an error with error_type: 'UnknownGroupException' is returned.
+    /// Query the server for the latest state of a known group. If no account in signald is a member of the group (anymore), an error with error_type: 'UnknownGroupError' is returned.
     pub async fn get_group(&mut self, msg: GetGroupRequestV1, id: Option<Uuid>) -> Result<JsonGroupV2InfoV1, SocketError> {
         let id = match id {
             Some(id) => id,
@@ -351,6 +351,31 @@ where T: AsyncSocket,
 
         match response.get("error") {
             None => Ok(serde_json::from_value::<ProfileV1>(response).unwrap()),
+            Some(_) => Err(SocketError::Signald(serde_json::from_value::<SignaldError>(response).unwrap()))
+        }
+    }
+
+    /// Retrieves the remote config (feature flags) from the server.
+    pub async fn get_remote_config(&mut self, msg: RemoteConfigRequestV1, id: Option<Uuid>) -> Result<RemoteConfigListV1, SocketError> {
+        let id = match id {
+            Some(id) => id,
+            None => Uuid::new_v4()
+        };
+        let msg = MessageCommon::new(
+            id.to_simple().to_string(),
+            String::from("get_remote_config"),
+            "v1".to_owned(),
+            msg
+        );
+
+        let mut msg = serde_json::to_vec(&msg).unwrap();
+        msg.push(b'\n');
+
+        self.socket.write(&msg, &id).await?;
+        let response = self.socket.get_response(id).await?;
+
+        match response.get("error") {
+            None => Ok(serde_json::from_value::<RemoteConfigListV1>(response).unwrap()),
             Some(_) => Err(SocketError::Signald(serde_json::from_value::<SignaldError>(response).unwrap()))
         }
     }
@@ -575,6 +600,31 @@ where T: AsyncSocket,
         }
     }
 
+    /// deny a request to join a group
+    pub async fn refuse_membership(&mut self, msg: RefuseMembershipRequestV1, id: Option<Uuid>) -> Result<JsonGroupV2InfoV1, SocketError> {
+        let id = match id {
+            Some(id) => id,
+            None => Uuid::new_v4()
+        };
+        let msg = MessageCommon::new(
+            id.to_simple().to_string(),
+            String::from("refuse_membership"),
+            "v1".to_owned(),
+            msg
+        );
+
+        let mut msg = serde_json::to_vec(&msg).unwrap();
+        msg.push(b'\n');
+
+        self.socket.write(&msg, &id).await?;
+        let response = self.socket.get_response(id).await?;
+
+        match response.get("error") {
+            None => Ok(serde_json::from_value::<JsonGroupV2InfoV1>(response).unwrap()),
+            Some(_) => Err(SocketError::Signald(serde_json::from_value::<SignaldError>(response).unwrap()))
+        }
+    }
+
     /// begin the account registration process by requesting a phone number verification code. when the code is received, submit it with a verify request
     pub async fn register(&mut self, msg: RegisterRequestV1, id: Option<Uuid>) -> Result<AccountV1, SocketError> {
         let id = match id {
@@ -700,7 +750,7 @@ where T: AsyncSocket,
         }
     }
 
-    /// Resolve a partial JsonAddress with only a number or UUID to one with both. Anywhere that signald accepts a JsonAddress will except a partial, this is a convenience function for client authors, mostly because signald doesn't resolve all the partials it returns
+    /// Resolve a partial JsonAddress with only a number or UUID to one with both. Anywhere that signald accepts a JsonAddress will except a partial, this is a convenience function for client authors, mostly because signald doesn't resolve all the partials it returns.
     pub async fn resolve_address(&mut self, msg: ResolveAddressRequestV1, id: Option<Uuid>) -> Result<JsonAddressV1, SocketError> {
         let id = match id {
             Some(id) => id,
@@ -973,7 +1023,7 @@ where T: AsyncSocket,
         }
     }
 
-    /// modify a group. Note that only one modification action may be preformed at once
+    /// modify a group. Note that only one modification action may be performed at once
     pub async fn update_group(&mut self, msg: UpdateGroupRequestV1, id: Option<Uuid>) -> Result<GroupInfoV1, SocketError> {
         let id = match id {
             Some(id) => id,
@@ -1162,6 +1212,14 @@ where T: AsyncSocket,
                     Err(SocketError::General("Incorrect message type"))
                 }
             },
+            "get_remote_config" => {
+                if let SignaldTypes::RemoteConfigRequestV1(msg) = msg {
+                    self.get_remote_config(msg, Some(id)).await
+                        .map(|response| SignaldTypes::RemoteConfigListV1(response))
+                } else {
+                    Err(SocketError::General("Incorrect message type"))
+                }
+            },
             "get_servers" => {
                 if let SignaldTypes::GetServersRequestV1(msg) = msg {
                     self.get_servers(msg, Some(id)).await
@@ -1230,6 +1288,14 @@ where T: AsyncSocket,
                 if let SignaldTypes::ReactRequestV1(msg) = msg {
                     self.react(msg, Some(id)).await
                         .map(|response| SignaldTypes::SendResponseV1(response))
+                } else {
+                    Err(SocketError::General("Incorrect message type"))
+                }
+            },
+            "refuse_membership" => {
+                if let SignaldTypes::RefuseMembershipRequestV1(msg) = msg {
+                    self.refuse_membership(msg, Some(id)).await
+                        .map(|response| SignaldTypes::JsonGroupV2InfoV1(response))
                 } else {
                     Err(SocketError::General("Incorrect message type"))
                 }
