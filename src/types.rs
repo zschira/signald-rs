@@ -1418,7 +1418,7 @@ pub struct SendPaymentRequestV1 {
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct SendRequestV1 {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub attachments: Option<Vec<JsonAttachmentV0>>,
+    pub attachments: Option<Vec<JsonAttachmentV1>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mentions: Option<Vec<JsonMentionV1>>,
     /// Example: "hello"

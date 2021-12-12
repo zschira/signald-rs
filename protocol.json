@@ -190,7 +190,7 @@
           "attachments": {
             "list": true,
             "type": "JsonAttachment",
-            "version": "v0"
+            "version": "v1"
           },
           "quote": {
             "type": "JsonQuote",
